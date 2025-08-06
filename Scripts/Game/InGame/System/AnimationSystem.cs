@@ -38,7 +38,7 @@ public class AnimationSystem : ISystem
             if (inEntityAnimRefComp.currentAnimName.IsNullOrEmpty() || inEntityAnimRefComp.currentAnimName.Equals(attackAnimationName) == false)
             {
                 inEntityAnimRefComp.currentAnimName = attackAnimationName;
-                inEntityAnimRefComp.entityAnimator.PlayAnimator(attackAnimationName,
+                inEntityAnimRefComp.entityAnimator.PlayAnimation(attackAnimationName,
                     inEffectCallback: () => {
                         attackAnimTriggerComp.triggerEvent?.Invoke(inManager, inEntityID, inEntityEffectRefComp);
                     },
@@ -74,10 +74,10 @@ public class AnimationSystem : ISystem
             if (inEntityAnimRefComp.currentAnimName.IsNullOrEmpty() || inEntityAnimRefComp.currentAnimName.Equals(deathAnimationName) == false)
             {
                 inEntityAnimRefComp.currentAnimName = deathAnimationName;
-                inEntityAnimRefComp.entityAnimator.PlayAnimator(deathAnimationName,
+                inEntityAnimRefComp.entityAnimator.PlayAnimation(deathAnimationName,
                     inCompleteCallback: () => {
                         deathAnimTriggerComp.triggerEvent?.Invoke(inManager, inEntityID, inEntityEffectRefComp);
-                        
+
                         var latestAnimRefComp = inManager.GetComponent<EntityAnimatorRefComponent>(inEntityID);
                         latestAnimRefComp.currentAnimName = null;
                         inManager.AddComponent(inEntityID, latestAnimRefComp);
@@ -97,7 +97,7 @@ public class AnimationSystem : ISystem
         if (!string.IsNullOrEmpty(animName) && CanPlayLoopAnimation(inEntityAnimRefComp.currentAnimName) && inEntityAnimRefComp.currentAnimName != animName)
         {
             inEntityAnimRefComp.currentAnimName = animName;
-            inEntityAnimRefComp.entityAnimator.PlayAnimator(animName);
+            inEntityAnimRefComp.entityAnimator.PlayAnimation(animName); 
             inManager.AddComponent(inEntityID, inEntityAnimRefComp);
         }
     }
@@ -115,7 +115,7 @@ public class AnimationSystem : ISystem
             if (inEntityAnimRefComp.currentAnimName.IsNullOrEmpty() || inEntityAnimRefComp.currentAnimName.Equals(attackAnimationName) == false)
             {
                 inEntityAnimRefComp.currentAnimName = attackAnimationName;
-                inEntityAnimRefComp.entityAnimator.PlayAnimator(attackAnimationName,
+                inEntityAnimRefComp.entityAnimator.PlayAnimation(attackAnimationName,
                     inEffectCallback: () => {
                         attackAnimTriggerComp.triggerEvent?.Invoke(inManager, inEntityID, inEntityEffectRefComp);
                     },
@@ -149,20 +149,20 @@ public class AnimationSystem : ISystem
         {
             var deathAnimTriggerComp = inManager.GetComponent<DeathAnimationTriggerComponent>(inEntityID);
 
-            var obj = inManager.GetComponent<GameObjectRefComponent>(inEntityID).gameObject;
-            obj?.SetActive(false);
-
-            inManager.AddComponent(inEntityID
-                , new EffectDataComponent 
-                { 
-                    effectNameKey = "Explosion", 
-                    position = inEntityEffectRefComp.entityEffector.GetTransformPos(),
-                    completeCallback = 
-                    ()=>
+            var effectRefComp = inManager.GetComponent<EntityEffectorRefComponent>(inEntityID);
+            effectRefComp.entityEffector.PlayEffects(new EffectDataComponent
+            {
+                effectNameKey = "Explosion",
+                position = inEntityEffectRefComp.entityEffector.GetTransformPos(),
+                completeCallback =
+                    () =>
                     {
                         inManager.RemoveComponent<EffectDataComponent>(inEntityID);
                     }
-                });
+            });
+
+            var effectorRefComp = inManager.GetComponent<EntityEffectorRefComponent>(inEntityID);
+            effectorRefComp.entityEffector.SetActive(false);
 
             inManager.RemoveComponent<DeathAnimationTriggerComponent>(inEntityID);
             return;
@@ -176,7 +176,7 @@ public class AnimationSystem : ISystem
             {
                 inEntityEffectRefComp.entityEffector.Clear();
                 inEntityAnimRefComp.currentAnimName = animName;
-                inEntityAnimRefComp.entityAnimator.PlayAnimator(animName);
+                inEntityAnimRefComp.entityAnimator.PlayAnimation(animName);
                 inManager.AddComponent(inEntityID, inEntityAnimRefComp);
             }
         }

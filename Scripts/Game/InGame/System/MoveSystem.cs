@@ -11,7 +11,6 @@ public class MoveSystem : ISystem
             var posComp = manager.GetComponent<PositionComponent>(entityID);
             var attackComp = manager.GetComponent<AttackComponent>(entityID);
 
-
             if (manager.HasComponent<MoveTargetComponent>(entityID))
             {
                 var targetComp = manager.GetComponent<MoveTargetComponent>(entityID);

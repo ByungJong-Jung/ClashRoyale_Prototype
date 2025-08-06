@@ -19,11 +19,22 @@ public class ProjectileSpawnSystem : ISystem
             if (!manager.HasComponent<TeamComponent>(shooterEntityID)) continue;
             var teamComp = manager.GetComponent<TeamComponent>(shooterEntityID);
 
-            // 투사체 엔티티 생성 및 컴포넌트 부착
-            int entityID = _entityFactory.CreateEntityProjectile(spawnDataComp.projectileEntityData, out GameObject projectileObject, teamComp.teamType);
-            projectileObject.transform.position = spawnDataComp.position;
+            var gameObjComp = manager.GetComponent<GameObjectRefComponent>(shooterEntityID);
+            int teamIndex = 0; 
+            if(manager.HasComponent<UnitTagComponent>(shooterEntityID))
+            {
+                teamIndex = gameObjComp.gameObject.GetComponent<Unit>().TeamIndex.Value;
+            }
+            else if(manager.HasComponent<BuildingTagComponent>(shooterEntityID))
+            {
+                teamIndex = gameObjComp.gameObject.GetComponent<Building>().TeamIndex.Value;
+            }
 
-            manager.AddComponent(entityID
+            // 투사체 엔티티 생성 및 컴포넌트 부착
+            NetworkService.Instance.RequestSpawnProjectile(
+                  spawnDataComp.projectileEntityData.entityName
+                , spawnDataComp.projectileEntityData.resourcePath
+                , spawnDataComp.position, teamIndex
                 , new ProjectileMoveComponent()
                 {
                     attackEntityID = spawnDataComp.attackEntityID,

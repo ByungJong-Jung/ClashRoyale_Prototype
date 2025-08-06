@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 public struct HealthBarUIRefComponent : IComponent
 {
-    public GameObject uiObject;
+    public IEntityHealthBar entityHealthBar;
+    public Transform healBarTransform;
     public Image fillImage;
 }

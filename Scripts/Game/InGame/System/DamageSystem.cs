@@ -8,9 +8,10 @@ public class DamageSystem : ISystem
         var removeList = new List<int>();
         foreach (var (entityID, damageComp) in manager.GetAllOfType<TakeDamageComponent>())
         {
+            // 이미 죽음 처리죽이면 패스
             if (manager.HasComponent<DeathFlagComponent>(entityID)) continue;
 
-            // HP 처리
+            // 1. HP 감소
             if (!manager.HasComponent<HealthComponent>(entityID)) continue;
             var healthComp = manager.GetComponent<HealthComponent>(entityID);
 
@@ -20,6 +21,7 @@ public class DamageSystem : ISystem
 
             manager.AddComponent(entityID, healthComp);
 
+            // 2. HP Bar 표시 트리거 컴포넌트 추가
             if (!manager.HasComponent<HealthBarActivatedComponent>(entityID))
                 manager.AddComponent(entityID, new HealthBarShowTriggerComponent());
 
@@ -37,12 +39,8 @@ public class DamageSystem : ISystem
                         triggerEvent =
                         (manager, entity, effectRefComp) =>
                         {
-                            var obj = manager.GetComponent<GameObjectRefComponent>(entity).gameObject;
-                            if(obj != null)
-                            {
-                                obj.SetActive(false);
-                                obj.transform.position = InGameData.INFINITY_POS;
-                            }
+                            var effectorRefComp = manager.GetComponent<EntityEffectorRefComponent>(entity);
+                            effectorRefComp.entityEffector.SetActive(false);
                             manager.AddComponent(entity, new DestroyComponent());
                         }
                     });

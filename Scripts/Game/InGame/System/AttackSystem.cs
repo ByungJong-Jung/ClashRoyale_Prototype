@@ -47,12 +47,12 @@ public class AttackSystem : ISystem
                 triggerEvent =
                 (manager, entity, effectRefComp) =>
                 {
-                    manager.AddComponent(entity
-                        , new EffectDataComponent
-                        {
-                            effectNameKey = "Hit",
-                            position = effectRefComp.entityEffector.GetEffectTransformPos()
-                        });
+                    var animatroRefComp = manager.GetComponent<EntityAnimatorRefComponent>(entity);
+                    animatroRefComp.entityAnimator.PlayHitEffectClientRpc(new EffectDataComponent
+                    {
+                        effectNameKey = "Hit",
+                        position = effectRefComp.entityEffector.GetEffectTransformPos()
+                    });
 
                     manager.AddComponents(inTargetEntityID
                         , new GetHitTriggerComponent()

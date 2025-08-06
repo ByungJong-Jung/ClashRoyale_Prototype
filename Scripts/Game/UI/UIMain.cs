@@ -16,7 +16,6 @@ public class UIMain : Singleton<UIMain> , IManager
     public void GameStart()
     {
         _uIElixir.GameStart();
-        StopLoadingAnimation();
         UIUnitCardManager.Instance.GameStart();
     }
 

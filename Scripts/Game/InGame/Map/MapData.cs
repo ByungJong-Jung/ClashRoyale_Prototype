@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using Unity.Netcode;
 
 public class MapData : Singleton<MapData>
 {
@@ -16,7 +17,26 @@ public class MapData : Singleton<MapData>
     [SerializeField] public Vector2 mapSize;
     [SerializeField] public MapTile[] mapTiles;
 
+    public Building[] Buildings => _buildings;
     [SerializeField] private Building[] _buildings;
+
+    [SerializeField] private Transform _mapDecosRoot;
+
+
+    public void SetUpMapDecorations()
+    {
+        bool isHost = NetworkManager.Singleton.IsHost;
+
+        if (!isHost)
+        {
+            _mapDecosRoot.rotation = Quaternion.Euler(0f, 180f, 0f);
+        }
+        else
+        {
+            _mapDecosRoot.rotation = Quaternion.Euler(0f, 0f, 0f);
+        }
+    }
+
 
     public void InitializeGrid()
     {
@@ -27,7 +47,7 @@ public class MapData : Singleton<MapData>
 
     public void CreateBuildingEntity(EntityFactory inFactory)
     {
-        for(int i = 0;i< _buildings.Length;i++)
+        for (int i = 0;i< _buildings.Length;i++)
         {
             _buildings[i].CreateBulildingEntity(inFactory);
         }
@@ -62,7 +82,17 @@ public class MapData : Singleton<MapData>
             return false;
 
         int idx = ToIndex(grid.x, grid.y);
-        return spawnableGridFlat[idx];
+        if (mapTiles[idx].hasObstacle)
+            return false;
+
+        if(NetworkManager.Singleton.IsHost)
+        {
+            return spawnableGridFlat[idx];
+        }
+        else
+        {
+            return !spawnableGridFlat[idx];
+        }
     }
 
     public bool HasObsticlesAtWorldPosition(Vector3 worldPos)

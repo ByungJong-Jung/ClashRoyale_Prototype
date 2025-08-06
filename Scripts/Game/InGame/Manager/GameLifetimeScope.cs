@@ -21,7 +21,6 @@ public class GameLifetimeScope : LifetimeScope
         builder.Register<EntityFactory>(Lifetime.Singleton);
         builder.RegisterComponentInHierarchy<UnitPlacer>();
         builder.RegisterComponentInHierarchy<InGameManager>();
-        builder.RegisterComponentInHierarchy<EnemySpawner>();
 
         // (선택) 유닛 생성, 버튼 처리, 스폰 매니저 등도 여기에 등록 가능
         // builder.RegisterComponentInHierarchy<SomeMonoBehaviour>();

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.Netcode;
 public class DestroySystem : ISystem
 {
     public void Tick(EntityManager manager, float deltaTime)
@@ -18,7 +19,11 @@ public class DestroySystem : ISystem
             if (manager.HasComponent<GameObjectRefComponent>(entityID))
             {
                 var goRef = manager.GetComponent<GameObjectRefComponent>(entityID);
-                ObjectPoolManager.Instance.PoolDic[goRef.resourcePath].Enqueue(goRef.gameObject);
+                var netObj = goRef.gameObject.GetComponent<NetworkObject>();
+                if (netObj != null)
+                    netObj.Despawn();
+
+                //ObjectPoolManager.Instance.PoolDic[goRef.resourcePath].Enqueue(goRef.gameObject);
             }
 
             removeList.Add(entityID);

@@ -3,8 +3,10 @@ using System.Collections;
 using VContainer;
 using System.Collections.Generic;
 using DG.Tweening;
+using Unity.Netcode;
 public class UnitPlacer : Singleton<UnitPlacer>, IManager
 {
+    public MapData MapData => _mapData;
     [SerializeField] private MapData _mapData;
     [SerializeField] LayerMask _groundMask;
     [SerializeField] RectTransform _cancelOnHoverUI;
@@ -28,15 +30,40 @@ public class UnitPlacer : Singleton<UnitPlacer>, IManager
     {
         yield return null;
         _priviewMaterial = new Material(Shader.Find("Unlit/UnlitAlphaWithFade"));
-        _mapData.Initialize();
+        //_mapData.Initialize();
     }
 
     public void GameStart()
     {
         var factory = _resolver.Resolve<EntityFactory>();
         _mapData.CreateBuildingEntity(factory);
+        _mapData.SetUpMapDecorations();
+
+        //SetupCameraView();
 
         StartCoroutine(Co_Upate());
+    }
+
+    private void SetupCameraView()
+    {
+        // 내 팀 가져오기
+        ulong myClientId = NetworkManager.Singleton.LocalClientId;
+        ETeamType myTeam = NetworkGameManager.Instance.GetPlayerTeam(myClientId);
+
+        if (myTeam == ETeamType.Enemy)
+        {
+            // 적 진영이면 시점 반전
+            var cam = Camera.main;
+            cam.transform.rotation = Quaternion.Euler(75f, 180f, 0f);
+            cam.transform.position = new Vector3(0f, 105f, 32.5f); // Z축 반대로
+        }
+        else
+        {
+            // 아군이면 원래 시점
+            var cam = Camera.main;
+            cam.transform.rotation = Quaternion.Euler(75f, 0f, 0f);
+            cam.transform.position = new Vector3(0f, 105f, -32.5f);
+        }
     }
 
     private IEnumerator Co_Upate()
@@ -60,24 +87,29 @@ public class UnitPlacer : Singleton<UnitPlacer>, IManager
     {
         if (!_isPlacing && _unitPath != null && _previewUnit != null)
         {
-            ObjectPoolManager.Instance.PoolDic[_unitPath].Enqueue(_previewUnit);
+            ObjectPoolManager.Instance.PoolDic[$"Single/{_unitPath}"].Enqueue(_previewUnit);
             _previewUnit = null;
             _unitPath = null;
         }
 
-        _unitPath = inUnitPath;
-        _previewUnit = ObjectPoolManager.Instance.GetPoolingObjects(inUnitPath).Dequeue();
+        _unitPath = $"Single/{inUnitPath}";
+        _previewUnit = ObjectPoolManager.Instance.GetPoolingObjects(_unitPath).Dequeue();
         _previewUnit.transform.position = inPos;
-        _previewUnit.transform.rotation = Quaternion.Euler(Vector3.zero);
+
+        Quaternion rotation;
+        if (NetworkManager.Singleton.IsHost)
+            rotation = Quaternion.Euler(Vector3.zero);
+        else
+            rotation = Quaternion.Euler(Vector3.up * 180f);
+
+        _previewUnit.transform.rotation = rotation;
         MakeTransparent(_previewUnit);
         
         _isPlacing = true;
-        _mapData.ShowTileMark();
     }
     public void CancelPlacement()
     {
         _isPlacing = false;
-        _mapData.HideTileMark();
 
         if (_previewUnit != null)
         {
@@ -92,7 +124,6 @@ public class UnitPlacer : Singleton<UnitPlacer>, IManager
     public void CancelPlacementv2(float inDelayTime)
     {
         _isPlacing = false;
-        _mapData.HideTileMark();
 
         var unit = _previewUnit;
         var path = _unitPath;
@@ -128,36 +159,14 @@ public class UnitPlacer : Singleton<UnitPlacer>, IManager
 
     private IEnumerator Co_SpawnUnit(EntityData inEntityData, Vector3 inSpawnPos, bool inIsGroup)
     {
-        string unitPath = _unitPath;
-
-        var factory = _resolver.Resolve<EntityFactory>();
-        int entityID = factory.CreateEntityUnit(inEntityData, out GameObject outUnitGameObject, inSpawnPos);
-        outUnitGameObject.transform.position = inSpawnPos;
-        
         yield return null;
-        yield return null;
-
-        GameObject unit = outUnitGameObject;
-        float dropHeight = 10f;
-        Vector3 dropStartPos = inSpawnPos + Vector3.up * dropHeight;
-        unit.transform.position = dropStartPos;
-
-        var entityManager = _resolver.Resolve<EntityManager>();
-        var unitScript = unit.GetComponent<Unit>();
-
-        float dropTime = 0.5f;
-        unit.SetActive(true);
-        unit.transform.DOMoveY(inSpawnPos.y, dropTime)
-            .SetEase(Ease.OutBounce)
-            .OnComplete(() =>
-            {
-                unitScript.SetEnable(true, inEntityData.unityType);
-                entityManager.RemoveComponent<ReadyToSpawnComponent>(entityID);
-            });
-
-        yield return null;
+        RequestSpawnUnit(inEntityData, inSpawnPos);
     }
 
+    public void RequestSpawnUnit(EntityData inEntityData, Vector3 inSpawnPos)
+    {
+        NetworkService.Instance.RequestSpawnUnit(inEntityData.entityName, inEntityData.resourcePath, inSpawnPos, NetworkService.Instance.MyTeamIndex);
+    }
 
     #region [ Change Material ]
 

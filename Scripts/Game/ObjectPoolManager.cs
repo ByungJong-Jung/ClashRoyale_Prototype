@@ -41,7 +41,6 @@ public class ObjectPool : IPool
         inComplete?.Invoke(inObejct);
     }
 
-    // ¿£Æ¼Æ¼ id
     public string AddNumberSuffix(string baseStr, int number)
     {
         return $"{baseStr}=={number}";

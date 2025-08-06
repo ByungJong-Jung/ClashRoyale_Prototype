@@ -5,18 +5,9 @@ using VContainer;
 public class EntityFactory
 {
     [Inject] private EntityManager _entityManager;
-    public int CreateEntityUnit(EntityData inEntityData, out GameObject outObject, Vector3 inSpawnPos, ETeamType inTeamType = ETeamType.Ally)
+    public int CreateEntityUnit(EntityData inEntityData, GameObject outObject, ETeamType inTeamType = ETeamType.Ally)
     {
         int entityID = _entityManager.CreateEntity();
-        GameObject obj = ObjectPoolManager.Instance.GetPoolingObjects(inEntityData.resourcePath).Dequeue(null, entityID);
-        obj.transform.position = inSpawnPos;
-        obj.transform.rotation = Quaternion.Euler(Vector3.zero);
-        outObject = obj;
-
-        var unit = outObject.GetComponent<Unit>();
-        Color entityColor = inTeamType.Equals(ETeamType.Ally) ? InGameData.TEAM_BLUE : InGameData.TEAM_RED;
-        unit.ChangeColor(entityColor);
-
         _entityManager.AddComponent(entityID, new TeamComponent { teamType = inTeamType });
         SetComponentsByEntityType(inEntityData, outObject, entityID);
 
@@ -32,7 +23,7 @@ public class EntityFactory
 
         var building = inBuildingObject.GetComponent<Building>();
         Color entityColor = inTeamType.Equals(ETeamType.Ally) ? InGameData.TEAM_BLUE : InGameData.TEAM_RED;
-        building.ChangeColor(entityColor);
+        building.ChangeColor(inTeamType);
 
         var entityID = _entityManager.CreateEntity();
         _entityManager.AddComponent(entityID, new TeamComponent { teamType = inTeamType });
@@ -40,17 +31,10 @@ public class EntityFactory
         SetComponentsByEntityType(inEntityData, inBuildingObject, entityID);
     }
 
-    public int CreateEntityProjectile(EntityData inEntityData, out GameObject outObject, ETeamType inTeamType = ETeamType.Ally)
+    public int CreateEntityProjectile(EntityData inEntityData, GameObject outObject, Vector3 inSpawnPos, ETeamType inTeamType = ETeamType.Ally)
     {
         var entityID = _entityManager.CreateEntity();
-
-        GameObject obj = ObjectPoolManager.Instance.GetPoolingObjects(inEntityData.resourcePath).Dequeue(null, entityID);
-        outObject = obj;
-
-        var projectile = outObject.GetComponent<Projectile>();
-        Color entityColor = inTeamType.Equals(ETeamType.Ally) ? InGameData.TEAM_BLUE : InGameData.TEAM_RED;
-        projectile.ChangeColor(entityColor);
-
+        outObject.transform.position = inSpawnPos;
         _entityManager.AddComponent(entityID, new TeamComponent { teamType = inTeamType });
 
         SetComponentsByEntityType(inEntityData, outObject, entityID);
@@ -81,7 +65,7 @@ public class EntityFactory
                             , new AttackComponent { attackStopDistance = unit.Agent.stoppingDistance, attackDamage = inData.attackDamage, attackRange = inData.attackRange, targetDetectionRange = inData.targetDetectionRange }
                             , new EntityAnimatorRefComponent { entityAnimator = unit.EntityAnimator }
                             , new EntityEffectorRefComponent { entityEffector = unit }
-                            , new HealthBarUIRefComponent { uiObject = unit.HealthBar, fillImage = unit.HpImage });
+                            , new HealthBarUIRefComponent { entityHealthBar = unit, healBarTransform = unit.HealthBar.transform, fillImage = unit.HpImage });
                     }
 
 
@@ -105,7 +89,7 @@ public class EntityFactory
                         _entityManager.AddComponents(inEntityID
                             , new TargetableTagComponent { targetingSize = building.CalculateSize() }
                             , new EntityEffectorRefComponent { entityEffector = building }
-                            , new HealthBarUIRefComponent { uiObject = building.HealthBar, fillImage = building.HpImage });
+                            , new HealthBarUIRefComponent { entityHealthBar = building, healBarTransform = building.HealthBar.transform, fillImage = building.HpImage });
 
                         var buildingUnit = building.BuildingUnit;
 

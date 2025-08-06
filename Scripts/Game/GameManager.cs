@@ -37,7 +37,7 @@ public class GameManager : MonoBehaviour
         {
             DBManager.Instance.Co_Initialize,
             CardDeckManager.Instance.Co_Initialize,
-            EnemySpawner.Instance.Co_Initialzie,
+            //EnemySpawner.Instance.Co_Initialzie,
             PopupManager.Instance.Co_Initialize,
             ObjectPoolManager.Instance.Co_Initailize,
             UIUnitCardManager.Instance.Co_Initialzie,
@@ -63,19 +63,37 @@ public class GameManager : MonoBehaviour
 
         yield return Co_Initialize();
 
-        
+
         var managers = new List<IManager>()
         {
             ElixirManager.Instance,
-            EnemySpawner.Instance,
+            //EnemySpawner.Instance,
             UnitPlacer.Instance,
             InGameManager.Instance,
             UIMain.Instance
         };
 
-        for (int i = 0; i < managers.Count; i++)
+        NetworkService.Instance.StartEvent =
+            ()=>
+            {
+                for (int i = 0; i < managers.Count; i++)
+                {
+                    managers[i].GameStart();
+                }
+
+                UIMain.Instance.StopLoadingAnimation();
+            };
+
+        NetworkService.Instance.AssignTeamsToAllBuildings();
+        NetworkService.Instance.NotifyReadyToServer();
+        yield return new WaitUntil(() => NetworkService.Instance.AllPlayersReady);
+
+
+        if (Unity.Netcode.NetworkManager.Singleton.IsHost)
         {
-            managers[i].GameStart();
+            NetworkService.Instance.GameStart();
         }
+
+        Debug.Log("게임 시작 완료!");
     }
 }

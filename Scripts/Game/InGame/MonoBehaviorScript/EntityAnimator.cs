@@ -2,9 +2,91 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using Unity.Netcode;
 
-public class EntityAnimator : MonoBehaviour
+public class EntityAnimator : NetworkBehaviour
 {
+    #region Network
+
+    [ClientRpc]
+    public void PlayAttackAnimationClientRpc()
+    {
+        Debug.Log($"PlayAttackAnimationClientRpc");
+        PlayAnimator("Attack", _effectCallback, _completeCallback); 
+    }
+
+    [ClientRpc]
+    public void PlayDeathAnimationClientRpc()
+    {
+        Debug.Log($"PlayDeathAnimationClientRpc");
+        PlayAnimator("Death", _effectCallback, _completeCallback);
+
+    }
+
+    [ClientRpc]
+    public void PlayWalkAnimationClientRpc()
+    {
+        Debug.Log($"PlayDeathAnimationClientRpc");
+        PlayAnimator("Walk", _effectCallback, _completeCallback);
+
+    }
+
+    [ClientRpc]
+    public void PlayIdleAnimationClientRpc()
+    {
+        Debug.Log($"PlayDeathAnimationClientRpc");
+        PlayAnimator("Idle", _effectCallback, _completeCallback);
+
+    }
+
+    public void PlayAnimation(string inAnimName, Action inEffectCallback = null, Action inCompleteCallback = null)
+    {
+        _effectCallback = inEffectCallback;
+        _completeCallback = inCompleteCallback;
+        switch (inAnimName)
+        {
+            case "Idle":
+                PlayIdleAnimationClientRpc();
+                break;
+
+            case "Walk":
+                PlayWalkAnimationClientRpc();
+                break;
+
+            case "Attack":
+                PlayAttackAnimationClientRpc();
+                break;
+
+            case "Death":
+                PlayDeathAnimationClientRpc();
+                break;
+        }
+    }
+
+    [ClientRpc]
+    public void PlayHitEffectClientRpc(EffectDataComponent inEffectDataComp)
+    {
+        string effectPath = ResourceEffectPath.GetEffectResourcePath(inEffectDataComp.effectNameKey);
+
+        float particleDuration = 0f;
+        GameObject effectObject = null;
+        ObjectPoolManager.Instance.GetPoolingObjects(effectPath).Dequeue(
+            (effect) =>
+            {
+                effectObject = effect;
+                effectObject.transform.position = inEffectDataComp.position;
+                particleDuration = effectObject.GetComponent<Effect>()?.GetEffectDuration ?? 0f;
+            });
+
+        ObjectPoolManager.Instance.ReleasePoolingObjects(particleDuration, effectObject, effectPath,
+            inComplete: () =>
+            {
+                inEffectDataComp.completeCallback?.Invoke();
+            });
+    }
+
+    #endregion
+
     public Animator Animator => _animator;
     [SerializeField] private Animator _animator;
 

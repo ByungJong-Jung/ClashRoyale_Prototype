@@ -1,7 +1,7 @@
 using DG.Tweening;
 using UnityEngine;
 using System.Collections.Generic;
-
+using Unity.Netcode;
 public class ProjectileMoveSystem : ISystem
 {
     public void Tick(EntityManager manager, float deltaTime)
@@ -71,13 +71,15 @@ public class ProjectileMoveSystem : ISystem
         if (inManager.HasComponent<EntityEffectorRefComponent>(inProjectileEntityId))
         {
             var projectileEffectRefComp = inManager.GetComponent<EntityEffectorRefComponent>(inProjectileEntityId);
+            
+            var effectRefComp = inManager.GetComponent<EntityEffectorRefComponent>(inProjectileEntityId);
+            effectRefComp.entityEffector.PlayEffects(new EffectDataComponent
+            {
+                effectNameKey = "Hit",
+                position = projectileEffectRefComp.entityEffector.GetEffectTransformPos()
+            });
 
             inManager.AddComponents(inProjectileMoveComp.targetEntityID,
-                new EffectDataComponent
-                {
-                    effectNameKey = "Hit",
-                    position = projectileEffectRefComp.entityEffector.GetEffectTransformPos()
-                },
                 new GetHitTriggerComponent(),
                 new TakeDamageComponent { amount = inProjectileMoveComp.damage }
             );
@@ -91,10 +93,14 @@ public class ProjectileMoveSystem : ISystem
     {
         inObjRefComp.gameObject.transform.DOKill();
 
-        ObjectPoolManager.Instance.PoolDic[inObjRefComp.resourcePath].Enqueue(
-            inObjRefComp.gameObject,
-            obj => obj.transform.position = InGameData.INFINITY_POS
-        );
+        var projectileEffectRefComp = inManager.GetComponent<EntityEffectorRefComponent>(inEntityId);
+        projectileEffectRefComp.entityEffector.SetActive(false);
+
+        var goRef = inManager.GetComponent<GameObjectRefComponent>(inEntityId);
+        var netObj = goRef.gameObject.GetComponent<NetworkObject>();
+        if (netObj != null)
+            netObj.Despawn();
+
         inManager.RemoveComponent<ProjectilePendingComponent>(inAttackEntityId);
     }
 

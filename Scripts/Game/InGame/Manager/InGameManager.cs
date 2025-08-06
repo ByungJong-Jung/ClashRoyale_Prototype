@@ -39,8 +39,6 @@ public class InGameManager : Singleton<InGameManager> , IManager
 
         // 시스템 순서 중요 !!
         {
-            damageSystem = _resolver.Resolve<DamageSystem>();
-            destroySystem = _resolver.Resolve<DestroySystem>();
             targetingSystem = _resolver.Resolve<TargetingSystem>();
             moveSystem = _resolver.Resolve<MoveSystem>();
             attackSystem = _resolver.Resolve<AttackSystem>();
@@ -48,30 +46,34 @@ public class InGameManager : Singleton<InGameManager> , IManager
             projectileMoveSystem = _resolver.Resolve<ProjectileMoveSystem>();
 
             animationSystem = _resolver.Resolve<AnimationSystem>();
-            effectSystem = _resolver.Resolve<EffectSystem>();
+            // effectSystem = _resolver.Resolve<EffectSystem>();
             healthBarSystem = _resolver.Resolve<HealthBarSystem>();
+            damageSystem = _resolver.Resolve<DamageSystem>();
+            destroySystem = _resolver.Resolve<DestroySystem>();
         }
 
         {
-            systems.Add(damageSystem);
-            systems.Add(destroySystem);
+
             systems.Add(targetingSystem);
             systems.Add(moveSystem);
             systems.Add(attackSystem);
+            systems.Add(damageSystem);
             systems.Add(projectileSpawnSystem);
             systems.Add(projectileMoveSystem);
 
             systems.Add(animationSystem);
-            systems.Add(effectSystem);
+            //systems.Add(effectSystem); // 서버 모드에서는 rpc를 이용해서 바로 생성
             systems.Add(healthBarSystem);
+            systems.Add(destroySystem);
         }
 
-        // 초기화.캐싱 임시
+        // 초기화. 
         var initMaterial = InGameData.HitEffectMaterial;
     }
 
     public void GameStart()
     {
+        NetworkService.Instance.SetupPlayerCamera();
         IsGameStart = true;
     }
 
@@ -79,9 +81,15 @@ public class InGameManager : Singleton<InGameManager> , IManager
     {
         if (!IsGameStart)
             return;
+        
+
+        if (!Unity.Netcode.NetworkManager.Singleton.IsHost)
+            return;
 
         float dt = Time.deltaTime;
+
         foreach (var sys in systems)
             sys.Tick(manager, dt);
+
     }
 }

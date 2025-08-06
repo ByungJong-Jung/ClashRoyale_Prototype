@@ -13,7 +13,7 @@ public class HealthBarSystem : ISystem
             if (manager.HasComponent<HealthBarUIRefComponent>(entityID))
             {
                 var healthBarComp = manager.GetComponent<HealthBarUIRefComponent>(entityID);
-                healthBarComp.uiObject.SetActive(true);
+                healthBarComp.entityHealthBar.SetActiveHealthBar(true);
 
                 if (manager.HasComponent<HealthBarActivatedComponent>(entityID) == false)
                     manager.AddComponent(entityID, new HealthBarActivatedComponent());
@@ -22,25 +22,24 @@ public class HealthBarSystem : ISystem
             triggerList.Add(entityID);
         }
 
-        if(triggerList.Count > 0)
+        if (triggerList.Count > 0)
         {
             foreach (var entity in triggerList)
                 manager.RemoveComponent<HealthBarShowTriggerComponent>(entity);
         }
 
         // 체력 처리
-        foreach (var (entityID,healthComp) in manager.GetAllOfType<HealthComponent>())
+        foreach (var (entityID, healthComp) in manager.GetAllOfType<HealthComponent>())
         {
-            if (!manager.HasComponent<HealthBarUIRefComponent>(entityID)) continue;
             var healthBarComp = manager.GetComponent<HealthBarUIRefComponent>(entityID);
+
+            if (!manager.HasComponent<HealthBarUIRefComponent>(entityID)) continue;
+            healthBarComp.entityHealthBar.ProcessHealthBar(healthComp);
 
             if (manager.HasComponent<HealthBarActivatedComponent>(entityID))
             {
-                ProcessHearBarRotation(healthBarComp.uiObject.transform);
+                healthBarComp.entityHealthBar.ProcessHearBarRotation();
             }
-
-            if (healthComp.maxHp > 0f)
-                healthBarComp.fillImage.fillAmount = healthComp.hp / healthComp.maxHp;
         }
     }
 
