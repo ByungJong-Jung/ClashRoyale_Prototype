@@ -30,7 +30,6 @@ public class ProjectileSpawnSystem : ISystem
                 teamIndex = gameObjComp.gameObject.GetComponent<Building>().TeamIndex.Value;
             }
 
-            // 투사체 엔티티 생성 및 컴포넌트 부착
             NetworkService.Instance.RequestSpawnProjectile(
                   spawnDataComp.projectileEntityData.entityName
                 , spawnDataComp.projectileEntityData.resourcePath
@@ -44,7 +43,6 @@ public class ProjectileSpawnSystem : ISystem
                     moveLength = spawnDataComp.projectileMoveLength
                 });
 
-            // 삭제 리스트에 추가 (1회성)
             removeList.Add(shooterEntityID);
         }
 

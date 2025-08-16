@@ -14,6 +14,28 @@ public class Building : NetworkBehaviour, IEntityEffector, IEntityHealthBar
         Debug.Log($"name : {gameObject.name} , teamType : {teamType}");
         _teamType = teamType;
         ChangeColor(teamType);
+        ApplyCanvasPos(teamType);
+    }
+
+    private void ApplyCanvasPos(ETeamType inTeamType)
+    {
+        bool isHost = NetworkManager.Singleton.IsHost;
+        switch (inTeamType)
+        {
+            case ETeamType.Enemy:
+                if(isHost)
+                    _objHealthBar.transform.localPosition = new Vector3(0f, 0f, 1f);
+                else
+                    _objHealthBar.transform.localPosition = new Vector3(0f, 0f, -1f);
+                break;
+
+            case ETeamType.Ally:
+                if(isHost)
+                    _objHealthBar.transform.localPosition = new Vector3(0f, 0f, -0.5f);
+                else
+                    _objHealthBar.transform.localPosition = new Vector3(0f, 0f, 0.5f);
+                break;
+        }
     }
 
 

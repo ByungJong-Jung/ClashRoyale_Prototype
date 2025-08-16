@@ -23,11 +23,11 @@ public class Unit : NetworkBehaviour, IEntityEffector, IEntityHealthBar
             ApplyTeamColor(newValue);
         };
 
-        PlaySpawnAnimation(
+        StartCoroutine(Co_PlaySpawnAnimation(
             ()=>
             {
                 SpawnAnimationCompleteEvent?.Invoke();
-            });
+            }));
     }
 
 
@@ -72,6 +72,8 @@ public class Unit : NetworkBehaviour, IEntityEffector, IEntityHealthBar
         gameObject.SetActive(false);
         gameObject.transform.position = InGameData.INFINITY_POS;
     }
+
+ 
     #endregion
 
 
@@ -110,17 +112,22 @@ public class Unit : NetworkBehaviour, IEntityEffector, IEntityHealthBar
     {
         SetActiveClientRpc(inActivity);
     }
-    public void PlaySpawnAnimation(Action inComplete)
+
+    private IEnumerator Co_PlaySpawnAnimation(Action inComplete)
+    {
+        yield return null;
+        PlaySpawnAnimation(inComplete);
+    }
+    private void PlaySpawnAnimation(Action inComplete)
     {
         Vector3 inSpawnPos = transform.position;
         float dropHeight = 10f;
         Vector3 dropStartPos = inSpawnPos + Vector3.up * dropHeight;
-        float dropTime = 0.5f;
+        float dropTime = 0.2f;
 
         transform.position = dropStartPos;
 
-        transform.DOMoveY(inSpawnPos.y, dropTime)
-            .SetEase(Ease.OutBounce).OnComplete(()=>inComplete?.Invoke());
+        transform.DOMoveY(inSpawnPos.y, dropTime).OnComplete(()=>inComplete?.Invoke());
     }
     public static void ResetAgent(NavMeshAgent inAgent)
     {

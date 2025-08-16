@@ -46,25 +46,24 @@ public class InGameManager : Singleton<InGameManager> , IManager
             projectileMoveSystem = _resolver.Resolve<ProjectileMoveSystem>();
 
             animationSystem = _resolver.Resolve<AnimationSystem>();
-            // effectSystem = _resolver.Resolve<EffectSystem>();
             healthBarSystem = _resolver.Resolve<HealthBarSystem>();
             damageSystem = _resolver.Resolve<DamageSystem>();
             destroySystem = _resolver.Resolve<DestroySystem>();
         }
 
         {
+            systems.Add(damageSystem);
+            systems.Add(destroySystem);
 
             systems.Add(targetingSystem);
             systems.Add(moveSystem);
             systems.Add(attackSystem);
-            systems.Add(damageSystem);
             systems.Add(projectileSpawnSystem);
             systems.Add(projectileMoveSystem);
 
             systems.Add(animationSystem);
             //systems.Add(effectSystem); // 서버 모드에서는 rpc를 이용해서 바로 생성
             systems.Add(healthBarSystem);
-            systems.Add(destroySystem);
         }
 
         // 초기화. 
@@ -90,6 +89,5 @@ public class InGameManager : Singleton<InGameManager> , IManager
 
         foreach (var sys in systems)
             sys.Tick(manager, dt);
-
     }
 }
